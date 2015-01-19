@@ -58,8 +58,8 @@ func (p *parsable) parse() error {
 			continue
 		}
 
-		switch true {
-		case c == '\n', c == '\r':
+		switch c {
+		case '\n', '\r':
 			if p.pos == posComponents {
 				p.pos = posNewline
 			}
@@ -68,14 +68,14 @@ func (p *parsable) parse() error {
 			if p.pos == posCompConst {
 				return p.error("String constants can only be on a single line", p.index, index)
 			}
-		case c == '\\':
+		case '\\':
 			switch p.pos {
 			case posCompConst, posCompRegex:
 				quoted = true
 			default:
 				return p.error("Unexpected slash", p.index, index)
 			}
-		case c == '"':
+		case '"':
 			switch p.pos {
 			case posComponents:
 				p.index = index
@@ -89,7 +89,7 @@ func (p *parsable) parse() error {
 			default:
 				return p.error("Unexected quote", p.index, index)
 			}
-		case c == ' ', c == '\t', c == '\v':
+		case ' ', '\t', '\v':
 			switch p.pos {
 			case posNewline, posComponents:
 				continue
@@ -107,7 +107,7 @@ func (p *parsable) parse() error {
 			default:
 				return p.error("Expected space or tabulation", p.index, index)
 			}
-		case c == ':':
+		case ':':
 			switch p.pos {
 			case posNameBegin:
 				p.pos = posComponents
@@ -118,7 +118,7 @@ func (p *parsable) parse() error {
 			default:
 				return p.error("Unexpected colon", p.index, index)
 			}
-		case c == '.':
+		case '.':
 			switch p.pos {
 			case posComponents:
 				p.pos = posCompEll1
@@ -136,7 +136,7 @@ func (p *parsable) parse() error {
 			default:
 				return p.error("Unexpected dot", p.index, index)
 			}
-		case c == '/':
+		case '/':
 			switch p.pos {
 			case posCompConst:
 				p.token.WriteRune(c)
