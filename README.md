@@ -1,6 +1,6 @@
 # TJ - Text Jumble
 
-Search tool etc, etc.
+A tool to perform semi-structured text searches
 
 # EXAMPLE
 
