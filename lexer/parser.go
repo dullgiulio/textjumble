@@ -10,7 +10,7 @@ type parsePosition int
 const (
 	posNewline parsePosition = iota
 	posNameBegin
-	posNameEnd
+	posComponents
 	posCompRef
 	posCompConst
 	posCompRegex
@@ -60,7 +60,7 @@ func (p *parsable) parse() error {
 
 		switch true {
 		case c == '\n', c == '\r':
-			if p.pos == posNameEnd {
+			if p.pos == posComponents {
 				p.pos = posNewline
 			}
 			p.line++
@@ -77,11 +77,11 @@ func (p *parsable) parse() error {
 			}
 		case c == '"':
 			switch p.pos {
-			case posNameEnd:
+			case posComponents:
 				p.index = index
 				p.pos = posCompConst
 			case posCompConst:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.emitToken(ctypeConst, p.index, index-1)
 				p.index = index
 			case posCompRegex:
@@ -91,15 +91,15 @@ func (p *parsable) parse() error {
 			}
 		case c == ' ', c == '\t', c == '\v':
 			switch p.pos {
-			case posNewline, posNameEnd:
+			case posNewline, posComponents:
 				continue
 			case posNameBegin:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.emitToken(ctypeNil, p.index, index)
 				p.index = index
 				p.token.WriteRune(c)
 			case posCompRef:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.emitToken(ctypeReference, p.index, index)
 				p.index = index
 			case posCompConst, posCompRegex:
@@ -110,7 +110,7 @@ func (p *parsable) parse() error {
 		case c == ':':
 			switch p.pos {
 			case posNameBegin:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.emitToken(ctypeNil, p.index, index)
 				p.index = index
 			case posCompConst, posCompRegex:
@@ -120,7 +120,7 @@ func (p *parsable) parse() error {
 			}
 		case c == '.':
 			switch p.pos {
-			case posNameEnd:
+			case posComponents:
 				p.pos = posCompEll1
 				p.index = index
 				p.token.WriteRune(c)
@@ -128,7 +128,7 @@ func (p *parsable) parse() error {
 				p.pos = posCompEll2
 				p.token.WriteRune(c)
 			case posCompEll2:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.token.WriteRune(c)
 				p.emitToken(ctypeEllipsis, p.index, index)
 			case posCompConst, posCompRegex:
@@ -140,11 +140,11 @@ func (p *parsable) parse() error {
 			switch p.pos {
 			case posCompConst:
 				p.token.WriteRune(c)
-			case posNameEnd:
+			case posComponents:
 				p.pos = posCompRegex
 				p.index = index
 			case posCompRegex:
-				p.pos = posNameEnd
+				p.pos = posComponents
 				p.emitToken(ctypeRegex, p.index, index-1)
 				p.index = index
 			default:
@@ -156,7 +156,7 @@ func (p *parsable) parse() error {
 				p.pos = posNameBegin
 				p.index = index
 				p.token.WriteRune(c)
-			case posNameEnd:
+			case posComponents:
 				p.pos = posCompRef
 				p.index = index
 				p.token.WriteRune(c)
