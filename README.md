@@ -26,7 +26,7 @@ expression:  ... ","
 return:      "return" expression
 comment:     "//" ... "\n"
 comment:     "/*" ... "*/"
-string:      '"' ... '"' :quote "\"
+string:      '"' ... '"'
 ```
 
  - Perform some searches
