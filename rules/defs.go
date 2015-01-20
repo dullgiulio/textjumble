@@ -58,6 +58,10 @@ func (c *component) String() string {
 	return "<nil>"
 }
 
+func (c *component) error(str string) error {
+	return fmt.Errorf("%s:%d: `%s': %s", c.file, c.line, c.value, str)
+}
+
 func makeComponent(value string, ctype componentType) component {
 	return component{
 		ctype: ctype,
@@ -65,15 +69,21 @@ func makeComponent(value string, ctype componentType) component {
 	}
 }
 
+func makeRuleName(value string) component {
+	return component{
+		value: value,
+	}
+}
+
 type rule struct {
-	name       string
+	name       component
 	components []component
 }
 
 func (r *rule) String() string {
 	var b bytes.Buffer
 
-	fmt.Fprintf(&b, "%s:", r.name)
+	fmt.Fprintf(&b, "%s:", r.name.value)
 
 	for _, c := range r.components {
 		fmt.Fprintf(&b, " %s", &c)
@@ -96,7 +106,7 @@ func (r rule) replace(sr rule) rule {
 	nr := makeRuleEmpty(r.name)
 
 	for _, c := range r.components {
-		if c.ctype == ctypeReference && c.value == sr.name {
+		if c.ctype == ctypeReference && c.value == sr.name.value {
 			nr.components = append(nr.components, sr.components...)
 		} else {
 			nr.components = append(nr.components, c)
@@ -106,14 +116,14 @@ func (r rule) replace(sr rule) rule {
 	return nr
 }
 
-func makeRule(name string, cs ...component) rule {
+func makeRule(name component, cs ...component) rule {
 	return rule{
 		name:       name,
 		components: cs,
 	}
 }
 
-func makeRuleEmpty(name string) rule {
+func makeRuleEmpty(name component) rule {
 	return rule{
 		name:       name,
 		components: make([]component, 0),
@@ -159,7 +169,7 @@ func (rs rules) merge(nrs rules) {
 	ch := nrs.all()
 
 	for r := range ch {
-		rs.add(r.name, r)
+		rs.add(r.name.value, r)
 	}
 }
 
@@ -171,9 +181,9 @@ func (rs rules) partitionByPurity() (a, b rules) {
 
 	for r := range rlsGen {
 		if r.isPure() {
-			a.add(r.name, r)
+			a.add(r.name.value, r)
 		} else {
-			b.add(r.name, r)
+			b.add(r.name.value, r)
 		}
 	}
 
@@ -191,13 +201,13 @@ func (rs rules) replaceReferences(reps rules) (rules, *referenceError) {
 					return res, newReferenceError("Invalid reference or cyclical definition", c.value, r)
 				} else {
 					for _, rep := range replacements {
-						res.add(r.name, r.replace(rep))
+						res.add(r.name.value, r.replace(rep))
 					}
 				}
 
 				if replacements, ok := res.get(c.value); ok {
 					for _, rep := range replacements {
-						res.add(r.name, r.replace(rep))
+						res.add(r.name.value, r.replace(rep))
 					}
 				}
 			}

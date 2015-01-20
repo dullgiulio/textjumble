@@ -20,10 +20,10 @@ func verifyFlat(t *testing.T, rls rules) {
 
 func TestToString(t *testing.T) {
 	var rules = map[string]rule{
-		"regex: /[a-zA-Z0-9]+/": makeRule("regex", makeComponent("[a-zA-Z0-9]+", ctypeRegex)),
-		"ellipsis: ...":         makeRule("ellipsis", makeComponent("", ctypeEllipsis)),
-		"reference: referenced": makeRule("reference", makeComponent("referenced", ctypeReference)),
-		"const: \"const\"":      makeRule("const", makeComponent("const", ctypeConst)),
+		"regex: /[a-zA-Z0-9]+/": makeRule(makeRuleName("regex"), makeComponent("[a-zA-Z0-9]+", ctypeRegex)),
+		"ellipsis: ...":         makeRule(makeRuleName("ellipsis"), makeComponent("", ctypeEllipsis)),
+		"reference: referenced": makeRule(makeRuleName("reference"), makeComponent("referenced", ctypeReference)),
+		"const: \"const\"":      makeRule(makeRuleName("const"), makeComponent("const", ctypeConst)),
 	}
 
 	for s, r := range rules {
@@ -43,8 +43,8 @@ func TestSimpleRuleResolution(t *testing.T) {
 
 	*/
 
-	rules.add("class", makeRule("class", makeComponent("class", ctypeConst)))
-	rules.add("function", makeRule("function", makeComponent("class", ctypeReference), makeComponent("function", ctypeConst)))
+	rules.add("class", makeRule(makeRuleName("class"), makeComponent("class", ctypeConst)))
+	rules.add("function", makeRule(makeRuleName("function"), makeComponent("class", ctypeReference), makeComponent("function", ctypeConst)))
 
 	verifyFlat(t, rules)
 }
@@ -61,10 +61,10 @@ func TestMultipleRulesResolution(t *testing.T) {
 
 	*/
 
-	rules.add("module", makeRule("module", makeComponent("module", ctypeConst)))
-	rules.add("class", makeRule("class", makeComponent("class", ctypeConst)))
-	rules.add("class", makeRule("class", makeComponent("module", ctypeReference)))
-	rules.add("function", makeRule("function", makeComponent("class", ctypeReference), makeComponent("function", ctypeConst)))
+	rules.add("module", makeRule(makeRuleName("module"), makeComponent("module", ctypeConst)))
+	rules.add("class", makeRule(makeRuleName("class"), makeComponent("class", ctypeConst)))
+	rules.add("class", makeRule(makeRuleName("class"), makeComponent("module", ctypeReference)))
+	rules.add("function", makeRule(makeRuleName("function"), makeComponent("class", ctypeReference), makeComponent("function", ctypeConst)))
 
 	verifyFlat(t, rules)
 }
@@ -81,10 +81,10 @@ func TestCyclicalReference(t *testing.T) {
 
 	*/
 
-	rules.add("module", makeRule("module", makeComponent("function", ctypeReference)))
-	rules.add("function", makeRule("function", makeComponent("module", ctypeReference)))
-	rules.add("doable", makeRule("doable", makeComponent("doable", ctypeConst)))
-	rules.add("mix", makeRule("mix", makeComponent("function", ctypeReference), makeComponent("doable", ctypeReference), makeComponent("module", ctypeReference)))
+	rules.add("module", makeRule(makeRuleName("module"), makeComponent("function", ctypeReference)))
+	rules.add("function", makeRule(makeRuleName("function"), makeComponent("module", ctypeReference)))
+	rules.add("doable", makeRule(makeRuleName("doable"), makeComponent("doable", ctypeConst)))
+	rules.add("mix", makeRule(makeRuleName("mix"), makeComponent("function", ctypeReference), makeComponent("doable", ctypeReference), makeComponent("module", ctypeReference)))
 
 	if _, err := rules.flatten(); err == nil {
 		t.Error("Expected an error on resolving cyclical references")
