@@ -91,14 +91,19 @@ func (p *parsable) parse() error {
 
 		switch c {
 		case '\n', '\r':
-			if p.pos == posComponents {
+			switch p.pos {
+			case posComponents:
 				p.pos = posNewline
-			}
-			p.line++
-
-			if p.pos == posCompConst {
+			case posCompRef:
+				p.emitToken(ctypeConst, p.index, index-1)
+				p.pos = posNewline
+			case posCompConst:
 				return p.error("String constants can only be on a single line", p.index, index)
 			}
+
+			p.index = 0
+			index = 0
+			p.line++
 		case '\\':
 			switch p.pos {
 			case posCompConst, posCompRegex:
