@@ -26,24 +26,55 @@ type parsable struct {
 	pos   parsePosition
 	file  string
 	token bytes.Buffer
+	comps []component
 }
 
 func newParsable(file, text string) *parsable {
 	return &parsable{
-		text: text,
-		file: file,
+		text:  text,
+		file:  file,
+		comps: make([]component, 0),
 	}
 }
 
+func (p *parsable) getRules() ([]rule, error) {
+	var cs []component
+	var rls []rule
+
+	for _, c := range p.comps {
+		if len(cs) > 0 {
+			if c.ctype == ctypeNil {
+				if len(cs) > 1 {
+					rls = append(rls, makeRule(cs[0], cs[1:]...))
+					cs = nil // Reset the components slice
+				} else {
+					return rls, c.error("Unexpected rule definition; expected rule component")
+				}
+			}
+		}
+
+		cs = append(cs, c)
+	}
+
+	if len(cs) > 0 {
+		rls = append(rls, makeRule(cs[0], cs[1:]...))
+	}
+
+	return rls, nil
+}
+
 func (p *parsable) emitToken(t componentType, i, j int) {
-	// TODO: Emit on channel (p.token.String(), t)
-	//		 t == ctypeNil indicates a rule name.
+	c := makeComponent(p.token.String(), t)
+	c.line = p.line + 1
+	c.file = p.file
+
+	p.comps = append(p.comps, c)
 
 	p.token.Reset()
 }
 
 func (p *parsable) error(str string, i, j int) error {
-	return fmt.Errorf("%s: %d: %d-%d: `%s': %s", p.file, p.line+1, i+1, j+1, p.token.String(), str)
+	return fmt.Errorf("%s:%d: %d-%d: `%s': %s", p.file, p.line+1, i+1, j+1, p.token.String(), str)
 }
 
 func (p *parsable) parse() error {
