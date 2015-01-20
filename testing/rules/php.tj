@@ -1,0 +1,13 @@
+name:        /[a-zA-Z_][A-Za-z0-9]/
+body:        "{" ... "}"
+class:       "class"
+function:    "function" name
+method:      class function
+variable:    "$" name
+call:        name "(" ... ")"
+expression:  ... ";"
+expression:  ... ","
+return:      "return" expression
+comment:     "//" ... "\n"
+comment:     "/*" ... "*/"
+string:      '"' ... '"'
