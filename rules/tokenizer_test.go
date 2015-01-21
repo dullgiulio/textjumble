@@ -8,36 +8,33 @@ import (
 
 func TestTokenizerSplit(t *testing.T) {
 	reader := bytes.NewReader([]byte(`
-<?php
-
-class TestExampleClass {
-        public function testMethod($arg1, $arg2) {
-                echo "$arg1, $arg2"; // Just print the arguments
-        }
-
-        public function anotherTestMethod() {
-                /*
-                 * Define some array
-                 */
-                $arr = array(1, 2, 3, "string with many words");
-
-                foreach ($arr as $a) {
-                        echo $a;
-
-                        return $a + $a;
-                }
-        }
+	public function testMethod($arg1, $arg2) {
 }
-
-?>
 `))
 
 	tok := newTokenizer(reader)
 	done := make(chan struct{})
 
 	go func() {
+		expectedTokens := []string{
+			"\n", "\t", "public", " ", "function", " ", "testMethod", "(", "$", "arg1", ",", " ",
+			"$", "arg2", ")", " ", "{", "\n", "}", "\n",
+		}
+
+		n := 0
+		nEx := len(expectedTokens)
+
 		for s := range tok.Tokens {
-			fmt.Printf("%s\n", s)
+			if n >= nEx {
+				t.Error(fmt.Errorf("%d: Generated unexpected token `%s'", n, s))
+				continue
+			}
+
+			if s != expectedTokens[n] {
+				t.Error(fmt.Errorf("%d: Expected token `%s', got `%s'", n, expectedTokens[n], s))
+			}
+
+			n++
 		}
 
 		done <- struct{}{}
