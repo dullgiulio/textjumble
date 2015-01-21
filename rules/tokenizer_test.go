@@ -1,9 +1,9 @@
 package rules
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
-	"bytes"
 )
 
 func TestTokenizerSplit(t *testing.T) {

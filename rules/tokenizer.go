@@ -1,14 +1,14 @@
 package rules
 
 import (
-	"io"
-	"bytes"
 	"bufio"
+	"bytes"
+	"io"
 )
 
 type tokenizer struct {
-	reader	*bufio.Reader
-	Tokens	chan string
+	reader *bufio.Reader
+	Tokens chan string
 }
 
 const utf8BOM rune = '\uFEFF'
