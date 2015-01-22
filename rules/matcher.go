@@ -1,13 +1,71 @@
 package rules
 
+import (
+	"bytes"
+	"regexp"
+)
+
 type matchData struct {
-	r rule
-	ts []string
+	r     rule
+	ts    []string
 	tsLen int
-	t int
+	t     int
 }
 
-func (m *matchData) token(p, nextP *component) bool {
+func isSpaceOrValue(x, str string) bool {
+	switch x {
+	case str, " ", "\t", "\v", "\n", "\r":
+		return true
+	}
+
+	return false
+}
+
+func (m *matchData) regexpGetString(nextVal string) string {
+	var matchable bytes.Buffer
+
+	// Peek forward in the list of tokens.
+	origMt := m.t
+
+	// Regex can be applied until the next constant token or a space.
+	for ; m.t < m.tsLen; m.t++ {
+		if isSpaceOrValue(m.ts[m.t], nextVal) {
+			break
+		}
+
+		matchable.WriteString(m.ts[m.t])
+	}
+
+	m.t = origMt
+
+	return matchable.String()
+}
+
+// Restore the position in the token slice as the last
+// unmatched token from the regular expression
+func (m *matchData) regexpSkipMatched(matched string) {
+	strIndex := 0
+	matchedLen := len(matched)
+
+	for ; m.t < m.tsLen; m.t++ {
+		tokenLen := len(m.ts[m.t])
+		nextIndex := strIndex + tokenLen
+
+		if nextIndex >= matchedLen {
+			break
+		}
+
+		if m.ts[m.t] != matched[strIndex:nextIndex] {
+			break
+		}
+
+		strIndex = nextIndex
+	}
+
+	m.t++
+}
+
+func (m *matchData) matchToken(p, nextP *component) bool {
 	switch p.ctype {
 	case ctypeConst:
 		if m.ts[m.t] == p.value {
@@ -25,6 +83,25 @@ func (m *matchData) token(p, nextP *component) bool {
 			m.t = m.tsLen
 			return true
 		}
+	case ctypeRegex:
+		var nextVal string
+
+		if nextP != nil {
+			nextVal = nextP.value
+		}
+
+		matchable := m.regexpGetString(nextVal)
+
+		// TODO: Compiled regex should be cached.
+		// TODO: Return error, don't use MustCompile.
+		rexp := regexp.MustCompile(p.value)
+		matched := rexp.FindString(matchable)
+
+		if matched != "" {
+			m.regexpSkipMatched(matched)
+		} else {
+			return false
+		}
 	}
 
 	return false
@@ -32,18 +109,18 @@ func (m *matchData) token(p, nextP *component) bool {
 
 func matchRule(r rule, ts []string) (matched bool) {
 	m := &matchData{
-		r: r,
-		ts: ts,
+		r:     r,
+		ts:    ts,
 		tsLen: len(ts),
 	}
 
 	compLen := len(r.components)
 
 	for i := 0; i < compLen; i++ {
-		if i < compLen - 1 {
-			matched = m.token(&r.components[i], &r.components[i+1])
+		if i < compLen-1 {
+			matched = m.matchToken(&r.components[i], &r.components[i+1])
 		} else {
-			matched = m.token(&r.components[i], nil)
+			matched = m.matchToken(&r.components[i], nil)
 		}
 
 		if m.t >= m.tsLen {

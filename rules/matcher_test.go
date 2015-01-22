@@ -19,3 +19,16 @@ func TestEllipsisBlock(t *testing.T) {
 		t.Error("Unexpected matched rule")
 	}
 }
+
+func TestRegex(t *testing.T) {
+	tokens := []string{
+		"{", "\n", "\t", "$", "long", "_", "variable", "=", " ", "100", ";", "\n", "}",
+	}
+
+	rule := makeRule(makeRuleName("test"), makeComponent("{", ctypeConst), makeComponent("...", ctypeEllipsis),
+		makeComponent("$", ctypeConst), makeComponent("[a-zA-Z_][a-zA-Z0-9_]*", ctypeRegex),
+		makeComponent("...", ctypeEllipsis), makeComponent("}", ctypeConst))
+	if !matchRule(rule, tokens) {
+		t.Error("Expected matched rule")
+	}
+}
