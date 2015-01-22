@@ -44,7 +44,7 @@ func (t *tokenizer) split() error {
 		r, _, err := t.reader.ReadRune()
 
 		if err == io.EOF {
-			return nil
+			break
 		}
 
 		if err != nil {
