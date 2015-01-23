@@ -21,5 +21,5 @@ lint: bin/golint
 	bin/golint src/tj/*.go
 
 bin/golint:
-	go get code.google.com/p/go.tools/cmd/vet
-	go build -o bin/golint code.google.com/p/go.tools/cmd/vet 
+	go get golang.org/x/tools/cmd/vet
+	go build -o bin/golint golang.org/x/tools/cmd/vet 
