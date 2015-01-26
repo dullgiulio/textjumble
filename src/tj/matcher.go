@@ -99,8 +99,7 @@ func (m *matchData) matchToken(p, nextP *component) bool {
 
 		if matched != "" {
 			m.regexpSkipMatched(matched)
-		} else {
-			return false
+			return true
 		}
 	}
 
