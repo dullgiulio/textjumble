@@ -1,9 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"bytes"
 	"regexp"
+	"strings"
 )
+
+type match struct {
+	lineBegin int
+	lineEnd	  int
+	i, j	  int
+}
+
+func (m *match) failed() bool {
+	return m.i == 0 && m.j == 0
+}
 
 type matchData struct {
 	r     rule
@@ -106,7 +118,18 @@ func (m *matchData) matchToken(p, nextP *component) bool {
 	return false
 }
 
-func matchRule(r rule, ts []string) (matched bool) {
+func (m *matchData) getMatchingString(match match) string {
+	if match.failed() {
+		return ""
+	}
+
+	return strings.Join(m.ts[match.i:match.j], "")
+}
+
+func matchRule(r rule, ts []string) *match {
+	var match match
+	var matchStarted bool
+
 	m := &matchData{
 		r:     r,
 		ts:    ts,
@@ -114,8 +137,11 @@ func matchRule(r rule, ts []string) (matched bool) {
 	}
 
 	compLen := len(r.components)
+	matchBeginning := m.t
 
 	for i := 0; i < compLen; i++ {
+		var matched bool
+
 		if i < compLen-1 {
 			matched = m.matchToken(&r.components[i], &r.components[i+1])
 		} else {
@@ -125,7 +151,40 @@ func matchRule(r rule, ts []string) (matched bool) {
 		if m.t >= m.tsLen {
 			break
 		}
+
+		if matched {
+			if !matchStarted {
+				match.i = matchBeginning
+				matchStarted = true
+			} else {
+				match.j = m.t - 1
+			}
+		} else {
+			if matched {
+				match.j = m.t - 1
+			}
+		}
 	}
 
-	return
+	if match.j < match.i {
+		match.j = m.t
+	}
+
+	fmt.Printf("%d %d %s\n", match.i, match.j, m.getMatchingString(match))
+	return &match
 }
+
+/*
+func matchAll(r rule, ts []string) bool {
+	for i := 0; i < len(ts); i++ {
+		matched := matchRule(r, ts[i:])
+
+		if matched != nil {
+			fmt.Printf("Matched \"%s\"\n", strings.Join(ts[i+matched.i:matched.j+i], ""))
+			i = matched.j + i
+		}
+	}
+
+	return false
+}
+*/
